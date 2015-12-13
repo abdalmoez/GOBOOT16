@@ -1,6 +1,6 @@
 ;AbdAlmoez GOBOOT16
 ; boot binary file in 16 bit real mode using FAT12 filesystem
-; copyleft
+;license: feel free to use this project
 [BITS 16]
 ORG 0
 DESTINATION_SEG_VALUE equ 0x0050
