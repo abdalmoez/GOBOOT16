@@ -1,5 +1,5 @@
 ;AbdAlmoez GOBOOT16
-; floppy disc 3.5" 1.44MB
+; floppy disk 3.5" 1.44MB
 ; boot binary file in 16 bit real mode using FAT12 filesystem
 ;license: feel free to use this project
 [BITS 16]
@@ -24,7 +24,7 @@ DESTINATION_SEG_VALUE equ 0x0050
      Flags                 db 0x00
      Signature             db 0x29
      VolumeID              dd 0xFFFFFFFF
-     VolumeLabel           db "GO-BOOTDISC"
+     VolumeLabel           db "GO-BOOTDISK"
      SystemID              db "FAT12   "
 START:
 	 
