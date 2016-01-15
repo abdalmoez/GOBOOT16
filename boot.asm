@@ -2,10 +2,21 @@
 ; floppy disk 3.5" 1.44MB
 ; boot binary file in 16 bit real mode using FAT12 filesystem
 ;license: feel free to use this project
-[BITS 16]
+BITS 16
 ORG 0
-DESTINATION_SEG_VALUE equ 0x0050
-          jmp     START
+;+--Configuration----------------------------------------+
+ ;Set drivenumber
+   ;%define HD
+   ;%undef HD
+	%ifdef HD
+	  %define DRIVE_NUM 0x80; 0x80 for hd
+	%else
+	  %define DRIVE_NUM 0x00; 0x00 for fd
+	%endif
+ ;Set Destrination Segment
+ DESTINATION_SEG_VALUE equ 0x0050
+;+-------------------------------------------------------+
+          jmp  short   START
           nop
      OEM_ID                db "GOBOOT16"
      BytesPerSector        dw 0x0200
@@ -20,35 +31,39 @@ DESTINATION_SEG_VALUE equ 0x0050
      NumHeads              dw 0x0002
      HiddenSectors         dd 0x00000000
      TotalSectorsLarge     dd 0x00000000
-     DriveNumber           db 0x00
+     DriveNumber           db DRIVE_NUM
      Flags                 db 0x00
      Signature             db 0x29
      VolumeID              dd 0xFFFFFFFF
      VolumeLabel           db "GO-BOOTDISK"
      SystemID              db "FAT12   "
+	 ERR_NOT_A_VALID_DISK  db "Unvalid disk",0
+	 ERR_MSG:
+	 KERNEL			 	   db "KERNEL  BIN"
+						   db " NOT FOUND",0
 START:
 	 
 		mov ax,0x7C0
 		mov ds,ax
-		mov fs,ax
 		mov es,ax
+		mov fs,ax
+		
           mov ax, 0x0000
           mov ss, ax
           mov sp, 0xFFFF		
 		
 		;Read FAT
-		mov cx,word[SectorsPerFAT]
 		mov ax,word[ReservedSectors]
 		mov bx,word[BytesPerSector]
-		call ReadSectors;ex:bx -> 0x7E00
+		mov cx,word[SectorsPerFAT]
+		call ReadSectors;es:bx -> 0x7E00
 		;Read Root Entry
 		call initEntryCluster
 		mov ax,word[RootEntryLBA]
 		mov cx,word[MaxRootEntries]
 		shr cx,4
 		mov word[EntryPtr],bx
-		mov si,word[BytesPerSector]
-		call ReadSectors;ex:bx -> 0x7E00	+ size of fat
+		call ReadSectors;es:bx -> 0x7E00	+ size of fat
 
 		;Search for file
 		mov cx,word[MaxRootEntries]
@@ -225,6 +240,8 @@ LoadCluster:;read the cluster number "AX" to "ES:BX"
           pop     bx
           pop     ax
           jnz     .SECTORLOOP                         ; attempt to read again		  
+		  mov 	  si,ERR_NOT_A_VALID_DISK
+		  call    Print
           int     0x18
      .SUCCESS:
           pop     cx
@@ -256,8 +273,6 @@ LoadCluster:;read the cluster number "AX" to "ES:BX"
      FirstClusterLBA dw 0x0000
 	 RootEntryLBA	 dw 0x0000
 	 EntryPtr 		 dw 0x0000
-	 ERR_MSG    	 db "NO "
-	 KERNEL			 db "KERNEL  BIN",0
 
-     TIMES 510-($-$$) DB 0
+     TIMES 510-($-$$) DB 0xFF;0xFF to ignore GUID entries
      DW 0xAA55
